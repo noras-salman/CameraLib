@@ -6,21 +6,29 @@
     android:layout_height="match_parent"
     tools:context="com.nasable.cameralib.MainActivity">
 
+
+
+
     <TextureView
         android:id="@+id/texture"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@+id/btn_takepictureHOLDER"
         android:layout_alignParentTop="true"/>
-    <LinearLayout
+    <ImageView
+        android:visibility="gone"
+        android:id="@+id/animationOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@android:color/white"/>
+
+    <RelativeLayout
         android:id="@+id/btn_takepictureHOLDER"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:layout_alignParentBottom="true"
-        android:gravity="center"
         android:background="@android:color/black"
-        >
+        android:padding="16dp">
 
         <ImageView
             android:id="@+id/btn_takepicture"
@@ -28,10 +36,12 @@
             android:layout_height="66dp"
             android:layout_gravity="center"
             android:src="@drawable/capture_button"
-            android:layout_marginBottom="16dp"
-            android:layout_marginTop="16dp"
+
+            android:layout_centerInParent="true"
             android:text="Take" />
-    </LinearLayout>
+
+
+    </RelativeLayout>
 
 
 </RelativeLayout>
