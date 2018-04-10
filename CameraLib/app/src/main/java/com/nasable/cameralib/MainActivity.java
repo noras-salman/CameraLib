@@ -1,107 +1,103 @@
 package com.nasable.cameralib;
 
+import android.content.ContentValues;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
-import android.util.Log;
-import android.view.TextureView;
 import android.view.View;
-import android.view.animation.Animation;
+import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.Toast;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+/**
+ * Created by noras on 10/4/18.
+ */
+
 public class MainActivity extends AppCompatActivity {
-    private ImageView takePictureButton;
-    private ImageView animationOverlay;
-    private AutoFitTextureView mTextureView;
-    private CameraLib cameraLib;
+
+    Uri imageUri;
+    /**
+     * Request code for old versions with Camera 1 API " <  Build.VERSION_CODES.LOLLIPOP"
+     * **/
+    public static int OLD_CAMERA_INTENT_REQUEST=0x01d;
+
+    /**
+     * Request code for new versions with Camera 2 API "Build.VERSION_CODES.LOLLIPOP"
+     * **/
+
+    public static int COSTUME_CAMERA_INTENT_REQUEST=0xc0;
+
+    ImageView result;
+    Button request;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mTextureView = (AutoFitTextureView) findViewById(R.id.texture);
-        //assert mTextureView != null;
-        cameraLib=new CameraLib(this, mTextureView,new CameraLib.OnPictureTakenListener() {
-            @Override
-            public void onFinish(byte[] imageData) {
-                Log.d("gotit","bytes "+imageData.length);
-            }
+        result=(ImageView)findViewById(R.id.result);
+        request=(Button)findViewById(R.id.request);
 
+        /*Handle request button click action*/
+        request.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onError(Exception e) {
+            public void onClick(View view) {
+
+                if(Build.VERSION_CODES.LOLLIPOP <= Build.VERSION.SDK_INT ){
+
+                    /** Use our costume view for newer Android version that support Camera 2 API
+                     *  Permissions are requested automatically from the CameraLib class **/
+
+                    Intent preview=new Intent(getApplicationContext(),CameraPreviewActivity.class);
+                    startActivityForResult(preview,COSTUME_CAMERA_INTENT_REQUEST);
+                }else{
+
+                    /** Use the old camera intent technique for devices that don't support Camera 2 API
+                     *  These devices also require no permission request
+                     *  However permission needs to be stated in the Manifest
+                     *  android.permission.READ_EXTERNAL_STORAGE is required to get access to the external content uri **/
+
+                    ContentValues values = new ContentValues();
+                    values.put(MediaStore.Images.Media.TITLE, "New Picture");
+                    values.put(MediaStore.Images.Media.DESCRIPTION, "From your Camera");
+                    imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+                    startActivityForResult(cameraIntent, OLD_CAMERA_INTENT_REQUEST);
+                }
+            }
+        });
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        if (requestCode == OLD_CAMERA_INTENT_REQUEST && resultCode == RESULT_OK){
+
+            /** --> The default camera intent
+             * The request result is in the image uri that we passed with the initiating intent **/
+
+            try {
+                Bitmap resultBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+                result.setImageBitmap(resultBitmap);
+            } catch (IOException e) {
                 e.printStackTrace();
             }
-        });
-        mTextureView.setSurfaceTextureListener(cameraLib.getSurfaceTextureListener());
-        takePictureButton = (ImageView) findViewById(R.id.btn_takepicture);
-        animationOverlay = (ImageView) findViewById(R.id.animationOverlay);
-        assert takePictureButton != null;
-        takePictureButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                animationOverlay.setVisibility(View.VISIBLE);
-                animationOverlay.setAnimation(cameraLib.getAnimationSet(new Animation.AnimationListener() {
-                    @Override
-                    public void onAnimationStart(Animation animation) {
+        }else if (requestCode == COSTUME_CAMERA_INTENT_REQUEST && resultCode == RESULT_OK){
 
-                    }
+            /** --> The costume preview camera intent
+             * The request result is in the result holder in the form of a byte array **/
 
-                    @Override
-                    public void onAnimationEnd(Animation animation) {
-                        animationOverlay.setVisibility(View.GONE);
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animation animation) {
-
-                    }
-                }));
-
-                cameraLib.takePicture();
-            }
-        });
+            final byte[] jpeg = ResultHolder.getImage();
+            Bitmap resultBitmap = BitmapFactory.decodeStream(new ByteArrayInputStream(jpeg));
+            result.setImageBitmap(resultBitmap);
     }
-
-
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == CameraLib.REQUEST_CAMERA_PERMISSION) {
-            if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                // close the app
-                Toast.makeText(getApplicationContext(), "Sorry!!!, you can't use this app without granting permission", Toast.LENGTH_LONG).show();
-                finish();
-            }else{
-
-            }
-        }
-    }
-    
-    @Override
-    public void onResume() {
-        super.onResume();
-        cameraLib.startBackgroundThread();
-
-        // When the screen is turned off and turned back on, the SurfaceTexture is already
-        // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
-        // a camera and start preview from here (otherwise, we wait until the surface is ready in
-        // the SurfaceTextureListener).
-        if (mTextureView.isAvailable()) {
-            cameraLib.openCamera(mTextureView.getWidth(), mTextureView.getHeight());
-        } else {
-            mTextureView.setSurfaceTextureListener(cameraLib.getSurfaceTextureListener());
-        }
-    }
-
-    @Override
-    public void onPause() {
-        cameraLib.closeCamera();
-        cameraLib.stopBackgroundThread();
-        super.onPause();
+            super.onActivityResult(requestCode, resultCode, data);
     }
 }

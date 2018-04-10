@@ -104,7 +104,6 @@ public class CameraLib {
      */
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     public static final int REQUEST_CAMERA_PERMISSION = 1;
-    private static final String FRAGMENT_DIALOG = "dialog";
 
     static {
         ORIENTATIONS.append(Surface.ROTATION_0, 90);

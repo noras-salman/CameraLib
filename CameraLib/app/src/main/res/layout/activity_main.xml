@@ -1,47 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.nasable.cameralib.MainActivity">
 
-
-
-
-    <com.nasable.cameralib.AutoFitTextureView
-        android:id="@+id/texture"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/btn_takepictureHOLDER"
-        android:layout_alignParentTop="true"/>
     <ImageView
-        android:visibility="gone"
-        android:id="@+id/animationOverlay"
+        android:id="@+id/result"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:src="@android:color/white"/>
+        android:layout_height="300dp"
+        android:src="@color/colorAccent"/>
 
-    <RelativeLayout
-        android:id="@+id/btn_takepictureHOLDER"
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/request"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:background="@android:color/black"
-        android:padding="16dp">
-
-        <ImageView
-            android:id="@+id/btn_takepicture"
-            android:layout_width="66dp"
-            android:layout_height="66dp"
-            android:layout_gravity="center"
-            android:src="@drawable/capture_button"
-
-            android:layout_centerInParent="true"
-            android:text="Take" />
-
-
-    </RelativeLayout>
-
+        android:layout_below="@+id/result"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:text="Request" />
 
 </RelativeLayout>

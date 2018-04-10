@@ -23,9 +23,17 @@ public class CameraPreviewActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera_preview); mTextureView = (AutoFitTextureView) findViewById(R.id.texture);
+
+        /** Create a new camera lib instance
+        *  Parameters
+        *  - Activity,
+        *  - AutoFitTextureView,
+        *  - CameraLib.OnPictureTakenListener **/
+
         cameraLib=new CameraLib(this, mTextureView,new CameraLib.OnPictureTakenListener() {
             @Override
             public void onFinish(byte[] imageData) {
+
                 ResultHolder.setImage(imageData);
                 setResult(RESULT_OK, null);
                 finish();
@@ -36,7 +44,9 @@ public class CameraPreviewActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         });
+
         mTextureView.setSurfaceTextureListener(cameraLib.getSurfaceTextureListener());
+
         takePictureButton = (ImageView) findViewById(R.id.btn_takepicture);
         animationOverlay = (ImageView) findViewById(R.id.animationOverlay);
         assert takePictureButton != null;
