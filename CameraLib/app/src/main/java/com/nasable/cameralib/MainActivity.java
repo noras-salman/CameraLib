@@ -4,33 +4,9 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.ImageFormat;
-import android.graphics.SurfaceTexture;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
-import android.hardware.camera2.CameraDevice;
-import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
-import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.TotalCaptureResult;
-import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.Image;
-import android.media.ImageReader;
-import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.util.Size;
-import android.util.SparseIntArray;
-import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.animation.Animation;
@@ -42,16 +18,26 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
     private ImageView takePictureButton;
     private ImageView animationOverlay;
-    private TextureView textureView;
+    private AutoFitTextureView mTextureView;
     private CameraLib cameraLib;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        textureView = (TextureView) findViewById(R.id.texture);
-        //assert textureView != null;
-        cameraLib=new CameraLib(this,textureView);
-        textureView.setSurfaceTextureListener(cameraLib.getTextureListener());
+        mTextureView = (AutoFitTextureView) findViewById(R.id.texture);
+        //assert mTextureView != null;
+        cameraLib=new CameraLib(this, mTextureView,new CameraLib.OnPictureTakenListener() {
+            @Override
+            public void onFinish(byte[] imageData) {
+                Log.d("gotit","bytes "+imageData.length);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                e.printStackTrace();
+            }
+        });
+        mTextureView.setSurfaceTextureListener(cameraLib.getSurfaceTextureListener());
         takePictureButton = (ImageView) findViewById(R.id.btn_takepicture);
         animationOverlay = (ImageView) findViewById(R.id.animationOverlay);
         assert takePictureButton != null;
@@ -76,17 +62,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }));
 
-                cameraLib.takePicture(new CameraLib.OnPictureTakenListener() {
-                    @Override
-                    public void onFinish(byte[] imageData) {
-                        Log.d("gotit","bytes "+imageData.length);
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                       e.printStackTrace();
-                    }
-                });
+                cameraLib.takePicture();
             }
         });
     }
@@ -105,21 +81,26 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+    
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
-      //  Log.e(TAG, "onResume");
         cameraLib.startBackgroundThread();
-        if (textureView.isAvailable()) {
-            cameraLib.openCamera();
+
+        // When the screen is turned off and turned back on, the SurfaceTexture is already
+        // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
+        // a camera and start preview from here (otherwise, we wait until the surface is ready in
+        // the SurfaceTextureListener).
+        if (mTextureView.isAvailable()) {
+            cameraLib.openCamera(mTextureView.getWidth(), mTextureView.getHeight());
         } else {
-            textureView.setSurfaceTextureListener(cameraLib.getTextureListener());
+            mTextureView.setSurfaceTextureListener(cameraLib.getSurfaceTextureListener());
         }
     }
+
     @Override
-    protected void onPause() {
-        //Log.e(TAG, "onPause");
-       // cameraLib.closeCamera();
+    public void onPause() {
+        cameraLib.closeCamera();
         cameraLib.stopBackgroundThread();
         super.onPause();
     }
