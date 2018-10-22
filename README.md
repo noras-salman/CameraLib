@@ -1,7 +1,9 @@
 # CameraLib
 Make a customized camera preview in seconds to take still images in your Android app 
 
-![Screen Shot](camlib_ss1.jpg | width=250)
+ 
+
+<img src="camlib_ss1.jpg" width="250">
 
 ## Demo Activity
 
